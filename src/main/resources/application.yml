@@ -1,0 +1,15 @@
+spring:
+  h2:
+    console:
+      enabled: true
+      path: '/console'
+  datasource:
+    url: 'jdbc:h2:file:./notes-db'
+    password: 'pass123'
+    username: 'matthestub'
+  jpa:
+    hibernate:
+      ddl-auto: update
+  main:
+    banner-mode: off
+note.template.allowMultipleNotesFromTemplate: false

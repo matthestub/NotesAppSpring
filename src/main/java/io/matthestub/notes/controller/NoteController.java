@@ -1,39 +1,62 @@
 package io.matthestub.notes.controller;
 
-import io.matthestub.notes.NotesRepository;
 import io.matthestub.notes.model.Note;
+import io.matthestub.notes.model.NoteRepository;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.rest.webmvc.RepositoryRestController;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.*;
 
-import java.awt.print.Pageable;
+import java.net.URI;
 import java.util.List;
 
-@RepositoryRestController
+@RestController
 public class NoteController {
     public static final Logger logger = LoggerFactory.getLogger(NoteController.class);
-    private NotesRepository notesRepository;
+    private final NoteRepository noteRepository;
 
-    public NoteController(NotesRepository notesRepository) {
-        this.notesRepository = notesRepository;
+    public NoteController(NoteRepository noteRepository) {
+        this.noteRepository = noteRepository;
     }
 
     @GetMapping(value = "/notes", params = {"!page", "!size", "!sort"})
-    ResponseEntity<?> getAllNotes() {
+    ResponseEntity<List<Note>> getAllNotes() {
         logger.warn("Exposing all the tasks!");
-        return ResponseEntity.ok(notesRepository.findAll());
+        return ResponseEntity.ok(noteRepository.findAll());
     }
 
     @GetMapping("/notes")
-    ResponseEntity<List<Note>> getAllNotes(Sort page) {
+    ResponseEntity<Iterable<Note>> getAllNotes(Sort page) {
         logger.info("Custom pageable");
-        return ResponseEntity.ok(notesRepository.findAll(page));
+        return ResponseEntity.ok(noteRepository.findAll(page));
     }
 
+    @GetMapping("/notes/{id}")
+    ResponseEntity<Note> getNoteById(@PathVariable() int id) {
+        logger.info("Searching for note with id = "+id);
+        return noteRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/notes")
+    ResponseEntity<Note> createNewNote(@RequestBody @Valid Note noteToCreate) {
+        logger.info("Creating new note");
+        Note savedNote = noteRepository.save(noteToCreate);
+        return ResponseEntity.created(URI.create("/"+savedNote.getId())).body(savedNote);
+    }
+
+    @PutMapping("/notes/{id}")
+    ResponseEntity<?> updateNote(@PathVariable int id, @Valid @RequestBody Note noteToUpdate) {
+        logger.info("Updating note with id = "+id);
+        if (!noteRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        } else {
+            noteToUpdate.setId(id);
+            noteRepository.save(noteToUpdate);
+            return ResponseEntity.noContent().build();
+        }
+    }
 }

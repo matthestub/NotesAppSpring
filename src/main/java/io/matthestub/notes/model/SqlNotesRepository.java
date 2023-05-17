@@ -1,17 +1,16 @@
-package io.matthestub.notes;
+package io.matthestub.notes.model;
 
-import io.matthestub.notes.model.Note;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.repository.query.Param;
-import org.springframework.data.rest.core.annotation.RepositoryRestResource;
-import org.springframework.data.rest.core.annotation.RestResource;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-
 @Repository
-public interface NotesRepository extends JpaRepository<Note, Integer> {
+public interface SqlNotesRepository extends NoteRepository, JpaRepository<Note, Integer> {
 
-    @RestResource(path = "done", rel = "done")
-    List<Note> findByDone(@Param("state") boolean state);
+
+    //or ... where id:=id in case I added annotation in front of the method arg like: @Param("id)
+    @Override
+    @Query(nativeQuery = true, value = "select count(*) > 0 from note where id=?1")
+    boolean existsById(Integer Id);
+
 }
